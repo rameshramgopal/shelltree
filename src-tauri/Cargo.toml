@@ -1,6 +1,6 @@
 [package]
 name = "shelltree"
-version = "0.1.0"
+version = "0.2.0"
 description = "ShellTree — Stop losing your terminals. A GUI-first terminal session manager for macOS."
 authors = ["Ramesh Bishukarma"]
 edition = "2021"
