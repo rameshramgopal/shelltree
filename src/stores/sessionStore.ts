@@ -1,0 +1,260 @@
+import { create } from "zustand";
+import { Terminal } from "@xterm/xterm";
+import * as tauri from "../lib/tauri";
+
+export interface Session {
+  id: string;
+  name: string;
+  groupId: string | null;
+  shell: string;
+  status: "running" | "stopped" | "error";
+  terminal: Terminal | null;
+}
+
+export interface SessionGroup {
+  id: string;
+  name: string;
+  collapsed: boolean;
+  order: number;
+}
+
+interface SessionStore {
+  sessions: Map<string, Session>;
+  groups: Map<string, SessionGroup>;
+  activeSessionId: string | null;
+  isLoading: boolean;
+
+  // Session actions
+  createSession: (name: string, groupId?: string) => Promise<string>;
+  deleteSession: (id: string) => Promise<void>;
+  renameSession: (id: string, name: string) => Promise<void>;
+  setActiveSession: (id: string | null) => void;
+  setSessionTerminal: (id: string, terminal: Terminal) => void;
+  updateSessionStatus: (id: string, status: "running" | "stopped" | "error") => void;
+  setSessionGroup: (id: string, groupId: string | null) => Promise<void>;
+
+  // Group actions
+  createGroup: (name: string) => Promise<string>;
+  deleteGroup: (id: string) => Promise<void>;
+  renameGroup: (id: string, name: string) => Promise<void>;
+  toggleGroupCollapsed: (id: string) => Promise<void>;
+
+  // Persistence
+  saveLayout: () => Promise<void>;
+  loadLayout: () => Promise<void>;
+
+  // Getters
+  getSessionsInGroup: (groupId: string | null) => Session[];
+  getActiveSession: () => Session | null;
+}
+
+export const useSessionStore = create<SessionStore>((set, get) => ({
+  sessions: new Map(),
+  groups: new Map(),
+  activeSessionId: null,
+  isLoading: false,
+
+  createSession: async (name: string, groupId?: string) => {
+    const info = await tauri.createSession(name, undefined, undefined, groupId);
+    const session: Session = {
+      id: info.id,
+      name: info.name,
+      groupId: info.group_id,
+      shell: info.shell,
+      status: "running",
+      terminal: null,
+    };
+
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      sessions.set(session.id, session);
+      return { sessions, activeSessionId: session.id };
+    });
+
+    return session.id;
+  },
+
+  deleteSession: async (id: string) => {
+    await tauri.deleteSession(id);
+
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const deleted = sessions.get(id);
+      if (deleted?.terminal) {
+        deleted.terminal.dispose();
+      }
+      sessions.delete(id);
+
+      let newActiveId = state.activeSessionId;
+      if (state.activeSessionId === id) {
+        const remaining = Array.from(sessions.keys());
+        newActiveId = remaining.length > 0 ? remaining[0] : null;
+      }
+
+      return { sessions, activeSessionId: newActiveId };
+    });
+  },
+
+  renameSession: async (id: string, name: string) => {
+    await tauri.renameSession(id, name);
+
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const session = sessions.get(id);
+      if (session) {
+        sessions.set(id, { ...session, name });
+      }
+      return { sessions };
+    });
+  },
+
+  setActiveSession: (id: string | null) => {
+    set({ activeSessionId: id });
+    tauri.setActiveSession(id);
+  },
+
+  setSessionTerminal: (id: string, terminal: Terminal) => {
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const session = sessions.get(id);
+      if (session) {
+        sessions.set(id, { ...session, terminal });
+      }
+      return { sessions };
+    });
+  },
+
+  updateSessionStatus: (id: string, status: "running" | "stopped" | "error") => {
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const session = sessions.get(id);
+      if (session) {
+        sessions.set(id, { ...session, status });
+      }
+      return { sessions };
+    });
+  },
+
+  setSessionGroup: async (id: string, groupId: string | null) => {
+    await tauri.setSessionGroup(id, groupId);
+
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const session = sessions.get(id);
+      if (session) {
+        sessions.set(id, { ...session, groupId });
+      }
+      return { sessions };
+    });
+  },
+
+  createGroup: async (name: string) => {
+    const group = await tauri.createGroup(name);
+
+    set((state) => {
+      const groups = new Map(state.groups);
+      groups.set(group.id, {
+        id: group.id,
+        name: group.name,
+        collapsed: group.collapsed,
+        order: group.order,
+      });
+      return { groups };
+    });
+
+    return group.id;
+  },
+
+  deleteGroup: async (id: string) => {
+    await tauri.deleteGroup(id);
+
+    // Move sessions to ungrouped
+    const sessionsToUpdate = get().getSessionsInGroup(id);
+    for (const session of sessionsToUpdate) {
+      await get().setSessionGroup(session.id, null);
+    }
+
+    set((state) => {
+      const groups = new Map(state.groups);
+      groups.delete(id);
+      return { groups };
+    });
+  },
+
+  renameGroup: async (id: string, name: string) => {
+    await tauri.renameGroup(id, name);
+
+    set((state) => {
+      const groups = new Map(state.groups);
+      const group = groups.get(id);
+      if (group) {
+        groups.set(id, { ...group, name });
+      }
+      return { groups };
+    });
+  },
+
+  toggleGroupCollapsed: async (id: string) => {
+    const collapsed = await tauri.toggleGroupCollapsed(id);
+
+    set((state) => {
+      const groups = new Map(state.groups);
+      const group = groups.get(id);
+      if (group) {
+        groups.set(id, { ...group, collapsed });
+      }
+      return { groups };
+    });
+  },
+
+  saveLayout: async () => {
+    await tauri.saveLayout();
+  },
+
+  loadLayout: async () => {
+    set({ isLoading: true });
+    try {
+      const state = await tauri.loadLayout();
+
+      if (!state) {
+        set({ isLoading: false });
+        return;
+      }
+
+      const groups = new Map<string, SessionGroup>();
+      for (const g of state.groups || []) {
+        groups.set(g.id, {
+          id: g.id,
+          name: g.name,
+          collapsed: g.collapsed,
+          order: g.order,
+        });
+      }
+
+      set({
+        groups,
+        activeSessionId: state.active_session_id || null,
+        isLoading: false,
+      });
+    } catch (e) {
+      // Expected to fail in browser environment
+      if (typeof window !== 'undefined' && !(window as unknown as { __TAURI__?: unknown }).__TAURI__) {
+        console.log("Running in browser mode - Tauri commands unavailable");
+      } else {
+        console.error("Failed to load layout:", e);
+      }
+      set({ isLoading: false });
+    }
+  },
+
+  getSessionsInGroup: (groupId: string | null) => {
+    const sessions = Array.from(get().sessions.values());
+    return sessions.filter((s) => s.groupId === groupId);
+  },
+
+  getActiveSession: () => {
+    const { sessions, activeSessionId } = get();
+    if (!activeSessionId) return null;
+    return sessions.get(activeSessionId) || null;
+  },
+}));

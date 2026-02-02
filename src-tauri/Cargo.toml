@@ -1,0 +1,28 @@
+[package]
+name = "terminal-manager"
+version = "0.1.0"
+description = "A visual terminal session manager for macOS"
+authors = ["Ramesh Bishukarma"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "terminal_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+portable-pty = "0.8"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+parking_lot = "0.12"
+chrono = { version = "0.4", features = ["serde"] }
+
