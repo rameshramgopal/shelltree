@@ -33,14 +33,14 @@ Ever find yourself with 10+ terminal tabs, hunting for that one running your dev
 
 ### Download
 
-Download the latest `.dmg` from [Releases](https://github.com/rameshbishukarma/shelltree/releases).
+Download the latest `.dmg` from [Releases](https://github.com/rameshramgopal/shelltree/releases).
 
 ### Build from Source
 
 ```bash
 # Prerequisites: Node.js 18+, Rust 1.70+, macOS 11+
 
-git clone https://github.com/rameshbishukarma/shelltree.git
+git clone https://github.com/rameshramgopal/shelltree.git
 cd shelltree
 npm install
 npm run tauri build
