@@ -18,11 +18,20 @@ export interface SessionGroup {
   order: number;
 }
 
+export type SplitDirection = "horizontal" | "vertical";
+
+export interface SplitView {
+  enabled: boolean;
+  sessionIds: string[];
+  direction: SplitDirection;
+}
+
 interface SessionStore {
   sessions: Map<string, Session>;
   groups: Map<string, SessionGroup>;
   activeSessionId: string | null;
   isLoading: boolean;
+  splitView: SplitView;
 
   // Session actions
   createSession: (name: string, groupId?: string) => Promise<string>;
@@ -39,6 +48,14 @@ interface SessionStore {
   renameGroup: (id: string, name: string) => Promise<void>;
   toggleGroupCollapsed: (id: string) => Promise<void>;
 
+  // Split view actions
+  enableSplitView: (sessionIds: string[], direction?: SplitDirection) => void;
+  disableSplitView: () => void;
+  addToSplit: (sessionId: string) => void;
+  removeFromSplit: (sessionId: string) => void;
+  setSplitDirection: (direction: SplitDirection) => void;
+  splitGroup: (groupId: string, direction?: SplitDirection) => void;
+
   // Persistence
   saveLayout: () => Promise<void>;
   loadLayout: () => Promise<void>;
@@ -53,6 +70,11 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   groups: new Map(),
   activeSessionId: null,
   isLoading: false,
+  splitView: {
+    enabled: false,
+    sessionIds: [],
+    direction: "vertical" as SplitDirection,
+  },
 
   createSession: async (name: string, groupId?: string) => {
     const info = await tauri.createSession(name, undefined, undefined, groupId);
@@ -91,7 +113,13 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         newActiveId = remaining.length > 0 ? remaining[0] : null;
       }
 
-      return { sessions, activeSessionId: newActiveId };
+      // Also remove from split view
+      const newSplitSessionIds = state.splitView.sessionIds.filter((sid) => sid !== id);
+      const splitView = newSplitSessionIds.length < 2
+        ? { enabled: false, sessionIds: [], direction: "vertical" as SplitDirection }
+        : { ...state.splitView, sessionIds: newSplitSessionIds };
+
+      return { sessions, activeSessionId: newActiveId, splitView };
     });
   },
 
@@ -204,6 +232,105 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         groups.set(id, { ...group, collapsed });
       }
       return { groups };
+    });
+  },
+
+  // Split view actions
+  enableSplitView: (sessionIds: string[], direction: SplitDirection = "vertical") => {
+    if (sessionIds.length < 2) return;
+    set({
+      splitView: {
+        enabled: true,
+        sessionIds,
+        direction,
+      },
+      activeSessionId: sessionIds[0],
+    });
+  },
+
+  disableSplitView: () => {
+    const currentSplit = get().splitView;
+    set({
+      splitView: {
+        enabled: false,
+        sessionIds: [],
+        direction: "vertical",
+      },
+      activeSessionId: currentSplit.sessionIds[0] || get().activeSessionId,
+    });
+  },
+
+  addToSplit: (sessionId: string) => {
+    const { splitView, sessions } = get();
+    if (!sessions.has(sessionId)) return;
+
+    if (!splitView.enabled) {
+      // Start a new split with current active + new session
+      const activeId = get().activeSessionId;
+      if (activeId && activeId !== sessionId) {
+        set({
+          splitView: {
+            enabled: true,
+            sessionIds: [activeId, sessionId],
+            direction: "vertical",
+          },
+        });
+      }
+    } else if (!splitView.sessionIds.includes(sessionId)) {
+      set({
+        splitView: {
+          ...splitView,
+          sessionIds: [...splitView.sessionIds, sessionId],
+        },
+      });
+    }
+  },
+
+  removeFromSplit: (sessionId: string) => {
+    const { splitView } = get();
+    const newSessionIds = splitView.sessionIds.filter((id) => id !== sessionId);
+
+    if (newSessionIds.length < 2) {
+      // Disable split view if less than 2 sessions
+      set({
+        splitView: {
+          enabled: false,
+          sessionIds: [],
+          direction: "vertical",
+        },
+        activeSessionId: newSessionIds[0] || null,
+      });
+    } else {
+      set({
+        splitView: {
+          ...splitView,
+          sessionIds: newSessionIds,
+        },
+      });
+    }
+  },
+
+  setSplitDirection: (direction: SplitDirection) => {
+    set((state) => ({
+      splitView: {
+        ...state.splitView,
+        direction,
+      },
+    }));
+  },
+
+  splitGroup: (groupId: string, direction: SplitDirection = "vertical") => {
+    const sessionsInGroup = get().getSessionsInGroup(groupId);
+    if (sessionsInGroup.length < 2) return;
+
+    const sessionIds = sessionsInGroup.map((s) => s.id);
+    set({
+      splitView: {
+        enabled: true,
+        sessionIds,
+        direction,
+      },
+      activeSessionId: sessionIds[0],
     });
   },
 

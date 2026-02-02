@@ -6,24 +6,30 @@ interface GroupItemProps {
   group: SessionGroup;
   sessions: Session[];
   activeSessionId: string | null;
+  splitSessionIds: string[];
   onToggle: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
   onSelectSession: (id: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onDeleteSession: (id: string) => void;
+  onSplitGroup: () => void;
+  onAddToSplit: (id: string) => void;
 }
 
 export function GroupItem({
   group,
   sessions,
   activeSessionId,
+  splitSessionIds,
   onToggle,
   onRename,
   onDelete,
   onSelectSession,
   onRenameSession,
   onDeleteSession,
+  onSplitGroup,
+  onAddToSplit,
 }: GroupItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -110,6 +116,29 @@ export function GroupItem({
           {sessions.length}
         </span>
 
+        {/* Split group button */}
+        {sessions.length >= 2 && (
+          <button
+            className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-[var(--color-surface-hover)] rounded transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSplitGroup();
+            }}
+            title="Split all terminals in group"
+          >
+            <svg
+              className="w-3.5 h-3.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="18" height="8" rx="1" />
+              <rect x="3" y="13" width="18" height="8" rx="1" />
+            </svg>
+          </button>
+        )}
+
         {/* Delete button */}
         <button
           className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-[var(--color-surface-hover)] rounded transition-opacity"
@@ -140,9 +169,11 @@ export function GroupItem({
               key={session.id}
               session={session}
               isActive={session.id === activeSessionId}
+              isInSplit={splitSessionIds.includes(session.id)}
               onSelect={() => onSelectSession(session.id)}
               onRename={(name) => onRenameSession(session.id, name)}
               onDelete={() => onDeleteSession(session.id)}
+              onAddToSplit={() => onAddToSplit(session.id)}
             />
           ))}
         </div>

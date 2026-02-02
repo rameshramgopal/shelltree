@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "./stores/sessionStore";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { TerminalPane } from "./components/Terminal/TerminalPane";
+import { SplitTerminalView } from "./components/Terminal/SplitTerminalView";
 
 function App() {
   const sessions = useSessionStore((s) => s.sessions);
@@ -11,6 +12,8 @@ function App() {
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
   const saveLayout = useSessionStore((s) => s.saveLayout);
   const loadLayout = useSessionStore((s) => s.loadLayout);
+  const splitView = useSessionStore((s) => s.splitView);
+  const disableSplitView = useSessionStore((s) => s.disableSplitView);
 
   const [sidebarWidth, setSidebarWidth] = useState(240);
   const [isResizing, setIsResizing] = useState(false);
@@ -112,6 +115,26 @@ function App() {
         }
         return;
       }
+
+      // Cmd+D: Add current terminal to split / start split
+      if (e.metaKey && e.key === "d") {
+        e.preventDefault();
+        const { splitView, activeSessionId, sessions } = useSessionStore.getState();
+        if (!activeSessionId) return;
+        
+        if (!splitView.enabled) {
+          // Find next session to split with
+          const sessionIds = Array.from(sessions.keys());
+          const currentIndex = sessionIds.indexOf(activeSessionId);
+          const nextIndex = (currentIndex + 1) % sessionIds.length;
+          if (sessionIds.length >= 2) {
+            useSessionStore.getState().enableSplitView([activeSessionId, sessionIds[nextIndex]]);
+          }
+        } else {
+          useSessionStore.getState().disableSplitView();
+        }
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -168,23 +191,40 @@ function App() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Title bar / drag region */}
-        <div className="drag-region h-[52px] flex items-end px-4 pb-2 border-b border-[var(--color-border)]">
-          {activeSessionId && (
-            <span className="text-sm text-[var(--color-text-muted)]">
-              {sessions.get(activeSessionId)?.name}
-            </span>
+        <div className="drag-region h-[52px] flex items-end justify-between px-4 pb-2 border-b border-[var(--color-border)]">
+          <span className="text-sm text-[var(--color-text-muted)]">
+            {splitView.enabled
+              ? `Split View (${splitView.sessionIds.length})`
+              : sessions.get(activeSessionId || "")?.name || ""}
+          </span>
+          {splitView.enabled && (
+            <button
+              className="no-drag text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] px-2 py-1 rounded hover:bg-[var(--color-surface-hover)]"
+              onClick={disableSplitView}
+            >
+              Exit Split
+            </button>
           )}
         </div>
 
         {/* Terminal area */}
         <div className="flex-1 relative overflow-hidden">
-          {Array.from(sessions.values()).map((session) => (
-            <TerminalPane
-              key={session.id}
-              sessionId={session.id}
-              isActive={session.id === activeSessionId}
+          {splitView.enabled ? (
+            <SplitTerminalView
+              sessionIds={splitView.sessionIds}
+              direction={splitView.direction}
+              activeSessionId={activeSessionId}
+              onSessionClick={setActiveSession}
             />
-          ))}
+          ) : (
+            Array.from(sessions.values()).map((session) => (
+              <TerminalPane
+                key={session.id}
+                sessionId={session.id}
+                isActive={session.id === activeSessionId}
+              />
+            ))
+          )}
 
           {/* Empty state */}
           {sessions.size === 0 && (

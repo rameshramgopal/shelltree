@@ -15,6 +15,7 @@ Ever find yourself with 10+ terminal tabs, hunting for that one running your dev
 - **🌳 Tree-Style Sidebar**: Organize terminals in a hierarchical tree view
 - **📁 Session Groups**: Group terminals by project (Backend, Frontend, Logs, etc.)
 - **⚡ Instant Switching**: Click to switch — no process restarts
+- **🪟 Split View**: Stack multiple terminals in one view — split by group or manually
 - **💾 Persistent Layout**: Groups and sessions survive app restarts
 - **🎨 Native macOS Design**: Dark mode, overlay title bar, native styling
 - **⌨️ Keyboard Shortcuts**: Power user shortcuts for quick navigation
@@ -25,9 +26,19 @@ Ever find yourself with 10+ terminal tabs, hunting for that one running your dev
 |----------|--------|
 | ⌘T | New terminal |
 | ⌘W | Close active terminal |
+| ⌘D | Toggle split view |
 | ⌘⇧] | Next terminal |
 | ⌘⇧[ | Previous terminal |
 | ⌘1-9 | Switch to terminal N |
+
+## Split View
+
+ShellTree supports viewing multiple terminals stacked in one view:
+
+- **Split Group**: Hover over a group and click the split icon to view all terminals in that group stacked
+- **Manual Split**: Hover over any session and click the split icon to add it to the current split
+- **Toggle Direction**: Switch between vertical and horizontal stacking
+- **Resizable Panes**: Drag the dividers to resize individual terminal panes
 
 ## Installation
 

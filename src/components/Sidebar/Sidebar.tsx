@@ -11,6 +11,7 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
   const sessions = useSessionStore((s) => s.sessions);
   const groups = useSessionStore((s) => s.groups);
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const splitView = useSessionStore((s) => s.splitView);
 
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
   const renameSession = useSessionStore((s) => s.renameSession);
@@ -19,9 +20,12 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
   const deleteGroup = useSessionStore((s) => s.deleteGroup);
   const toggleGroupCollapsed = useSessionStore((s) => s.toggleGroupCollapsed);
   const getSessionsInGroup = useSessionStore((s) => s.getSessionsInGroup);
+  const splitGroup = useSessionStore((s) => s.splitGroup);
+  const addToSplit = useSessionStore((s) => s.addToSplit);
 
   // Get ungrouped sessions
   const ungroupedSessions = getSessionsInGroup(null);
+  const splitSessionIds = splitView.sessionIds;
 
   // Sort groups by order
   const sortedGroups = Array.from(groups.values()).sort(
@@ -85,12 +89,15 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
             group={group}
             sessions={getSessionsInGroup(group.id)}
             activeSessionId={activeSessionId}
+            splitSessionIds={splitSessionIds}
             onToggle={() => toggleGroupCollapsed(group.id)}
             onRename={(name) => renameGroup(group.id, name)}
             onDelete={() => deleteGroup(group.id)}
             onSelectSession={setActiveSession}
             onRenameSession={renameSession}
             onDeleteSession={deleteSession}
+            onSplitGroup={() => splitGroup(group.id)}
+            onAddToSplit={addToSplit}
           />
         ))}
 
@@ -107,9 +114,11 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
                 key={session.id}
                 session={session}
                 isActive={session.id === activeSessionId}
+                isInSplit={splitSessionIds.includes(session.id)}
                 onSelect={() => setActiveSession(session.id)}
                 onRename={(name) => renameSession(session.id, name)}
                 onDelete={() => deleteSession(session.id)}
+                onAddToSplit={() => addToSplit(session.id)}
               />
             ))}
           </div>

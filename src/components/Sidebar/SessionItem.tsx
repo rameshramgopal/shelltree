@@ -4,17 +4,21 @@ import { Session } from "../../stores/sessionStore";
 interface SessionItemProps {
   session: Session;
   isActive: boolean;
+  isInSplit?: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onAddToSplit?: () => void;
 }
 
 export function SessionItem({
   session,
   isActive,
+  isInSplit = false,
   onSelect,
   onRename,
   onDelete,
+  onAddToSplit,
 }: SessionItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(session.name);
@@ -61,6 +65,8 @@ export function SessionItem({
       className={`session-item group flex items-center gap-2 px-3 py-1.5 cursor-pointer rounded-md mx-1 ${
         isActive
           ? "bg-[var(--color-surface-active)]"
+          : isInSplit
+          ? "bg-[var(--color-accent)]/20"
           : "hover:bg-[var(--color-surface-hover)]"
       }`}
       onClick={onSelect}
@@ -97,6 +103,36 @@ export function SessionItem({
       ) : (
         <span className="flex-1 text-sm text-[var(--color-text)] truncate">
           {session.name}
+        </span>
+      )}
+
+      {/* Add to split button */}
+      {onAddToSplit && !isInSplit && (
+        <button
+          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--color-surface-hover)] rounded transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToSplit();
+          }}
+          title="Add to split view"
+        >
+          <svg
+            className="w-3.5 h-3.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="3" y="3" width="18" height="8" rx="1" />
+            <rect x="3" y="13" width="18" height="8" rx="1" />
+          </svg>
+        </button>
+      )}
+
+      {/* Split indicator */}
+      {isInSplit && (
+        <span className="text-xs text-[var(--color-accent)]" title="In split view">
+          ⊞
         </span>
       )}
 
