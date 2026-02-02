@@ -348,6 +348,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         return;
       }
 
+      // Load groups first
       const groups = new Map<string, SessionGroup>();
       for (const g of state.groups || []) {
         groups.set(g.id, {
@@ -358,9 +359,48 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         });
       }
 
+      set({ groups });
+
+      // Restore sessions from saved state
+      const savedSessions = state.sessions || [];
+      let firstSessionId: string | null = null;
+
+      for (const savedSession of savedSessions) {
+        try {
+          // Recreate each session with its saved name and group
+          const info = await tauri.createSession(
+            savedSession.name,
+            undefined, // use default shell
+            savedSession.cwd,
+            savedSession.group_id || undefined
+          );
+          
+          const session: Session = {
+            id: info.id,
+            name: info.name,
+            groupId: info.group_id,
+            shell: info.shell,
+            status: "running",
+            terminal: null,
+          };
+
+          set((s) => {
+            const sessions = new Map(s.sessions);
+            sessions.set(session.id, session);
+            return { sessions };
+          });
+
+          if (!firstSessionId) {
+            firstSessionId = session.id;
+          }
+        } catch (err) {
+          console.error("Failed to restore session:", savedSession.name, err);
+        }
+      }
+
+      // Set active session
       set({
-        groups,
-        activeSessionId: state.active_session_id || null,
+        activeSessionId: firstSessionId,
         isLoading: false,
       });
     } catch (e) {
