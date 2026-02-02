@@ -88,12 +88,20 @@ impl PtyManager {
             dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"))
         });
 
+        // Spawn as login shell to load user's profile (.zshrc, .bash_profile, etc.)
         let mut cmd = CommandBuilder::new(&shell_path);
+        cmd.arg("-l"); // Login shell flag
         cmd.cwd(&working_dir);
 
-        // Set up environment
+        // Inherit all environment variables from parent process
+        for (key, value) in std::env::vars() {
+            cmd.env(key, value);
+        }
+
+        // Override specific terminal settings
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        cmd.env("LANG", std::env::var("LANG").unwrap_or_else(|_| "en_US.UTF-8".to_string()));
 
         let child = pair
             .slave
