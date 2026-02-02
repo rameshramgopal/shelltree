@@ -192,7 +192,7 @@ function App() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Title bar / drag region */}
         <div className="drag-region h-[52px] flex items-end justify-between px-4 pb-2 border-b border-[var(--color-border)]">
-          <span className="text-sm text-[var(--color-text-muted)]">
+          <span className="text-sm text-[var(--color-text-muted)] no-drag pointer-events-none">
             {splitView.enabled
               ? `Split View (${splitView.sessionIds.length})`
               : sessions.get(activeSessionId || "")?.name || ""}

@@ -64,23 +64,40 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Drag region for window */
+/* Drag region for window - must be explicit for Tauri overlay titlebar */
 .drag-region {
   -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .no-drag {
   -webkit-app-region: no-drag;
 }
 
+/* Ensure interactive elements inside drag regions are clickable */
+.drag-region button,
+.drag-region input,
+.drag-region a,
+.drag-region [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
 /* Terminal container */
+.terminal-container {
+  padding: 8px 12px 12px 12px;
+}
+
 .terminal-container .xterm {
-  padding: 8px 12px;
   height: 100%;
 }
 
 .terminal-container .xterm-viewport {
   overflow-y: auto !important;
+}
+
+.terminal-container .xterm-screen {
+  padding: 4px;
 }
 
 /* Focus ring */

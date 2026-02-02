@@ -34,9 +34,9 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
 
   return (
     <div className="sidebar-vibrancy h-full flex flex-col border-r border-[var(--color-border)]">
-      {/* Header with drag region */}
-      <div className="drag-region h-[52px] flex items-end px-3 pb-2">
-        <h1 className="text-sm font-semibold text-[var(--color-text)]">
+      {/* Header with drag region - traffic lights need ~70px on left */}
+      <div className="drag-region h-[52px] flex items-end px-3 pb-2 pl-[70px]">
+        <h1 className="text-sm font-semibold text-[var(--color-text)] no-drag">
           Terminals
         </h1>
       </div>
