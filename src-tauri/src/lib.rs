@@ -54,5 +54,5 @@ pub fn run() {
             commands::load_layout,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running terminal manager");
+        .expect("error while running ShellTree");
 }

@@ -1,18 +1,23 @@
-# Terminal Manager
+# 🌲 ShellTree
 
-A visual terminal session manager for macOS, built with Tauri, React, and xterm.js.
+**Stop losing your terminals.**
 
-![Terminal Manager](./docs/screenshot.png)
+ShellTree is a GUI-first terminal session manager for macOS that lets you run, group, and switch between multiple terminals using a persistent tree-style sidebar.
+
+![ShellTree](./docs/screenshot.png)
+
+## Why ShellTree?
+
+Ever find yourself with 10+ terminal tabs, hunting for that one running your dev server? ShellTree fixes terminal chaos by giving you a visual, organized way to manage all your shells in one window.
 
 ## Features
 
-- **Visual Session Management**: Left sidebar with hierarchical tree view of terminal sessions
-- **Session Groups**: Organize terminals into collapsible groups (Backend, Frontend, Logs, etc.)
-- **Multiple Concurrent Terminals**: Run and manage multiple shell sessions simultaneously
-- **Instant Switching**: Click to switch between terminals without process restarts
-- **Session Persistence**: Layout and groups persist across app restarts
-- **Native macOS Experience**: Dark mode, overlay title bar, native styling
-- **Keyboard Shortcuts**: Power user shortcuts for quick navigation
+- **🌳 Tree-Style Sidebar**: Organize terminals in a hierarchical tree view
+- **📁 Session Groups**: Group terminals by project (Backend, Frontend, Logs, etc.)
+- **⚡ Instant Switching**: Click to switch — no process restarts
+- **💾 Persistent Layout**: Groups and sessions survive app restarts
+- **🎨 Native macOS Design**: Dark mode, overlay title bar, native styling
+- **⌨️ Keyboard Shortcuts**: Power user shortcuts for quick navigation
 
 ## Keyboard Shortcuts
 
@@ -24,68 +29,64 @@ A visual terminal session manager for macOS, built with Tauri, React, and xterm.
 | ⌘⇧[ | Previous terminal |
 | ⌘1-9 | Switch to terminal N |
 
-## Tech Stack
+## Installation
 
-- **Framework**: [Tauri 2](https://tauri.app/) (Rust + WebView)
-- **Frontend**: React 18 + TypeScript + Vite
-- **Terminal**: [xterm.js](https://xtermjs.org/) with WebGL addon
-- **Styling**: Tailwind CSS v4
-- **State**: Zustand
-- **PTY**: portable-pty (Rust)
+### Download
 
-## Development
+Download the latest `.dmg` from [Releases](https://github.com/rameshbishukarma/shelltree/releases).
 
-### Prerequisites
-
-- Node.js 18+
-- Rust 1.70+
-- macOS 11+ (Big Sur or later)
-
-### Setup
+### Build from Source
 
 ```bash
-# Install dependencies
+# Prerequisites: Node.js 18+, Rust 1.70+, macOS 11+
+
+git clone https://github.com/rameshbishukarma/shelltree.git
+cd shelltree
 npm install
-
-# Run in development mode
-npm run tauri dev
-
-# Build for production
 npm run tauri build
 ```
 
-### Project Structure
+The built app will be at `src-tauri/target/release/bundle/macos/ShellTree.app`
+
+## Development
+
+```bash
+npm install
+npm run tauri dev
+```
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | [Tauri 2](https://tauri.app/) |
+| Frontend | React 18 + TypeScript + Vite |
+| Terminal | [xterm.js](https://xtermjs.org/) + WebGL |
+| Styling | Tailwind CSS v4 |
+| State | Zustand |
+| PTY | portable-pty (Rust) |
+
+## Project Structure
 
 ```
 ├── src/                    # Frontend (React)
-│   ├── components/         # UI components
-│   │   ├── Sidebar/        # Session tree view
+│   ├── components/
+│   │   ├── Sidebar/        # Tree view navigation
 │   │   └── Terminal/       # xterm.js wrapper
-│   ├── stores/             # Zustand state management
-│   ├── lib/                # Tauri command wrappers
-│   └── styles/             # Global CSS + Tailwind
+│   ├── stores/             # Zustand state
+│   └── lib/                # Tauri IPC wrappers
 ├── src-tauri/              # Backend (Rust)
 │   └── src/
 │       ├── pty/            # PTY management
-│       │   ├── manager.rs  # Session spawning/IO
-│       │   └── session.rs  # Session data models
-│       ├── commands.rs     # Tauri IPC commands
-│       ├── persistence.rs  # State save/load
-│       └── lib.rs          # App entry point
+│       ├── commands.rs     # IPC commands
+│       └── persistence.rs  # State save/load
 ```
-
-## Build Output
-
-After running `npm run tauri build`:
-
-- **App**: `src-tauri/target/release/bundle/macos/Terminal Manager.app`
-- **DMG**: `src-tauri/target/release/bundle/dmg/Terminal Manager_X.X.X_aarch64.dmg`
 
 ## Data Storage
 
-Session layout is persisted to:
+Session layout persists to:
 ```
-~/Library/Application Support/TerminalManager/state.json
+~/Library/Application Support/ShellTree/state.json
 ```
 
 ## Contributing

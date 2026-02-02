@@ -5,7 +5,7 @@ use std::path::PathBuf;
 /// Get the app data directory
 fn get_app_data_dir() -> PathBuf {
     let base = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-    base.join("TerminalManager")
+    base.join("ShellTree")
 }
 
 /// Get the state file path

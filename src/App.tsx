@@ -202,7 +202,7 @@ function App() {
                   <line x1="13" y1="16" x2="17" y2="16" />
                 </svg>
                 <h2 className="text-lg text-[var(--color-text)] mb-2">
-                  Welcome to Terminal Manager
+                  Welcome to ShellTree
                 </h2>
                 <p className="text-sm text-[var(--color-text-muted)] mb-4">
                   Create a new terminal to get started

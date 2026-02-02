@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Terminal Manager",
+  "productName": "ShellTree",
   "version": "0.1.0",
-  "identifier": "com.terminalmanager.app",
+  "identifier": "com.shelltree.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Terminal Manager",
+        "title": "ShellTree",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -37,8 +37,8 @@
       "icons/icon.ico"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "A visual terminal session manager for macOS",
-    "longDescription": "Terminal Manager is a macOS desktop application that provides a visual way to manage multiple terminal sessions. Features include session grouping, persistence, and a VS Code-inspired interface.",
+    "shortDescription": "ShellTree — Stop losing your terminals",
+    "longDescription": "ShellTree is a GUI-first terminal session manager for macOS that lets you run, group, and switch between multiple terminals using a persistent tree-style sidebar.",
     "macOS": {
       "minimumSystemVersion": "11.0"
     }
