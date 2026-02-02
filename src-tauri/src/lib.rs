@@ -40,6 +40,7 @@ pub fn run() {
             commands::get_session,
             commands::get_all_sessions,
             commands::set_session_group,
+            commands::set_startup_command,
             // Group commands
             commands::create_group,
             commands::delete_group,

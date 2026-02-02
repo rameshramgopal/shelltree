@@ -28,6 +28,7 @@ pub fn create_session(
     shell: Option<String>,
     cwd: Option<String>,
     group_id: Option<String>,
+    startup_command: Option<String>,
     rows: Option<u16>,
     cols: Option<u16>,
 ) -> Result<SessionInfo, String> {
@@ -37,10 +38,27 @@ pub fn create_session(
     let cols = cols.unwrap_or(80);
 
     let manager = pty_manager.lock();
-    let mut info = manager.spawn_session(id, name, shell, cwd_path, rows, cols)?;
+    let mut info = manager.spawn_session(id.clone(), name, shell, cwd_path, rows, cols)?;
 
     if group_id.is_some() {
         info.group_id = group_id;
+    }
+
+    // Set and run startup command if provided
+    if let Some(ref cmd) = startup_command {
+        info.startup_command = startup_command.clone();
+        manager.set_startup_command(&id, Some(cmd.clone()))?;
+        // Small delay to let shell initialize, then run the command
+        std::thread::spawn({
+            let pty_manager = pty_manager.inner().clone();
+            let id = id.clone();
+            let cmd = cmd.clone();
+            move || {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let manager = pty_manager.lock();
+                let _ = manager.run_command(&id, &cmd);
+            }
+        });
     }
 
     Ok(info)
@@ -111,6 +129,16 @@ pub fn set_session_group(
 ) -> Result<(), String> {
     let manager = pty_manager.lock();
     manager.set_session_group(&id, group_id)
+}
+
+#[tauri::command]
+pub fn set_startup_command(
+    pty_manager: State<'_, SharedPtyManager>,
+    id: String,
+    command: Option<String>,
+) -> Result<(), String> {
+    let manager = pty_manager.lock();
+    manager.set_startup_command(&id, command)
 }
 
 // ============ Group Commands ============

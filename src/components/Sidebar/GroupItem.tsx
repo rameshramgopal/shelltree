@@ -15,6 +15,7 @@ interface GroupItemProps {
   onDeleteSession: (id: string) => void;
   onSplitGroup: () => void;
   onAddToSplit: (id: string) => void;
+  onSetStartupCommand?: (id: string, command: string | null) => void;
 }
 
 export function GroupItem({
@@ -30,6 +31,7 @@ export function GroupItem({
   onDeleteSession,
   onSplitGroup,
   onAddToSplit,
+  onSetStartupCommand,
 }: GroupItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -174,6 +176,7 @@ export function GroupItem({
               onRename={(name) => onRenameSession(session.id, name)}
               onDelete={() => onDeleteSession(session.id)}
               onAddToSplit={() => onAddToSplit(session.id)}
+              onSetStartupCommand={onSetStartupCommand ? (cmd) => onSetStartupCommand(session.id, cmd) : undefined}
             />
           ))}
         </div>

@@ -16,6 +16,7 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
   const renameSession = useSessionStore((s) => s.renameSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
+  const setStartupCommand = useSessionStore((s) => s.setStartupCommand);
   const renameGroup = useSessionStore((s) => s.renameGroup);
   const deleteGroup = useSessionStore((s) => s.deleteGroup);
   const toggleGroupCollapsed = useSessionStore((s) => s.toggleGroupCollapsed);
@@ -98,6 +99,7 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
             onDeleteSession={deleteSession}
             onSplitGroup={() => splitGroup(group.id)}
             onAddToSplit={addToSplit}
+            onSetStartupCommand={setStartupCommand}
           />
         ))}
 
@@ -119,6 +121,7 @@ export function Sidebar({ onNewSession, onNewGroup }: SidebarProps) {
                 onRename={(name) => renameSession(session.id, name)}
                 onDelete={() => deleteSession(session.id)}
                 onAddToSplit={() => addToSplit(session.id)}
+                onSetStartupCommand={(cmd) => setStartupCommand(session.id, cmd)}
               />
             ))}
           </div>

@@ -9,6 +9,7 @@ export interface Session {
   shell: string;
   status: "running" | "stopped" | "error";
   terminal: Terminal | null;
+  startupCommand: string | null;
 }
 
 export interface SessionGroup {
@@ -34,13 +35,14 @@ interface SessionStore {
   splitView: SplitView;
 
   // Session actions
-  createSession: (name: string, groupId?: string) => Promise<string>;
+  createSession: (name: string, groupId?: string, startupCommand?: string) => Promise<string>;
   deleteSession: (id: string) => Promise<void>;
   renameSession: (id: string, name: string) => Promise<void>;
   setActiveSession: (id: string | null) => void;
   setSessionTerminal: (id: string, terminal: Terminal) => void;
   updateSessionStatus: (id: string, status: "running" | "stopped" | "error") => void;
   setSessionGroup: (id: string, groupId: string | null) => Promise<void>;
+  setStartupCommand: (id: string, command: string | null) => Promise<void>;
 
   // Group actions
   createGroup: (name: string) => Promise<string>;
@@ -76,8 +78,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     direction: "vertical" as SplitDirection,
   },
 
-  createSession: async (name: string, groupId?: string) => {
-    const info = await tauri.createSession(name, undefined, undefined, groupId);
+  createSession: async (name: string, groupId?: string, startupCommand?: string) => {
+    const info = await tauri.createSession(name, undefined, undefined, groupId, startupCommand);
     const session: Session = {
       id: info.id,
       name: info.name,
@@ -85,6 +87,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       shell: info.shell,
       status: "running",
       terminal: null,
+      startupCommand: info.startup_command,
     };
 
     set((state) => {
@@ -171,6 +174,19 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       const session = sessions.get(id);
       if (session) {
         sessions.set(id, { ...session, groupId });
+      }
+      return { sessions };
+    });
+  },
+
+  setStartupCommand: async (id: string, command: string | null) => {
+    await tauri.setStartupCommand(id, command);
+
+    set((state) => {
+      const sessions = new Map(state.sessions);
+      const session = sessions.get(id);
+      if (session) {
+        sessions.set(id, { ...session, startupCommand: command });
       }
       return { sessions };
     });
@@ -367,12 +383,13 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
       for (const savedSession of savedSessions) {
         try {
-          // Recreate each session with its saved name and group
+          // Recreate each session with its saved name, group, and startup command
           const info = await tauri.createSession(
             savedSession.name,
             undefined, // use default shell
             savedSession.cwd,
-            savedSession.group_id || undefined
+            savedSession.group_id || undefined,
+            savedSession.startup_command || undefined // Auto-run startup command
           );
           
           const session: Session = {
@@ -382,6 +399,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
             shell: info.shell,
             status: "running",
             terminal: null,
+            startupCommand: info.startup_command,
           };
 
           set((s) => {

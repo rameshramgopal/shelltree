@@ -15,6 +15,7 @@ export interface SessionInfo {
   cwd: string;
   status: SessionStatus;
   created_at: number;
+  startup_command: string | null;
 }
 
 export interface SessionGroup {
@@ -46,6 +47,7 @@ export async function createSession(
   shell?: string,
   cwd?: string,
   groupId?: string,
+  startupCommand?: string,
   rows?: number,
   cols?: number
 ): Promise<SessionInfo> {
@@ -54,6 +56,7 @@ export async function createSession(
     shell,
     cwd,
     groupId,
+    startupCommand,
     rows,
     cols,
   });
@@ -85,6 +88,10 @@ export async function getAllSessions(): Promise<SessionInfo[]> {
 
 export async function setSessionGroup(id: string, groupId: string | null): Promise<void> {
   return invoke("set_session_group", { id, groupId });
+}
+
+export async function setStartupCommand(id: string, command: string | null): Promise<void> {
+  return invoke("set_startup_command", { id, command });
 }
 
 // Group commands

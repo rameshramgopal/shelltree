@@ -20,6 +20,9 @@ pub struct SessionInfo {
     pub cwd: PathBuf,
     pub status: SessionStatus,
     pub created_at: i64,
+    /// Optional startup command to run when session is created/restored (e.g., "ssh user@host")
+    #[serde(default)]
+    pub startup_command: Option<String>,
 }
 
 impl SessionInfo {
@@ -32,6 +35,7 @@ impl SessionInfo {
             cwd,
             status: SessionStatus::Running,
             created_at: chrono::Utc::now().timestamp(),
+            startup_command: None,
         }
     }
 }

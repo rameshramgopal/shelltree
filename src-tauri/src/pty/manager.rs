@@ -260,6 +260,24 @@ impl PtyManager {
         Ok(())
     }
 
+    /// Set startup command for a session (to run on restore)
+    pub fn set_startup_command(&self, id: &str, command: Option<String>) -> Result<(), String> {
+        let mut sessions = self.sessions.lock();
+        let session = sessions
+            .get_mut(id)
+            .ok_or_else(|| format!("Session not found: {}", id))?;
+
+        session.info.startup_command = command;
+        Ok(())
+    }
+
+    /// Run a command in a session (used for startup commands)
+    pub fn run_command(&self, id: &str, command: &str) -> Result<(), String> {
+        // Write the command followed by Enter
+        let command_with_newline = format!("{}\n", command);
+        self.write_to_session(id, command_with_newline.as_bytes())
+    }
+
     /// Check if a session exists and is running
     #[allow(dead_code)]
     pub fn is_session_running(&self, id: &str) -> bool {

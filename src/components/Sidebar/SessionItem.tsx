@@ -9,6 +9,7 @@ interface SessionItemProps {
   onRename: (name: string) => void;
   onDelete: () => void;
   onAddToSplit?: () => void;
+  onSetStartupCommand?: (command: string | null) => void;
 }
 
 export function SessionItem({
@@ -19,10 +20,14 @@ export function SessionItem({
   onRename,
   onDelete,
   onAddToSplit,
+  onSetStartupCommand,
 }: SessionItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(session.name);
+  const [showCommandDialog, setShowCommandDialog] = useState(false);
+  const [editCommand, setEditCommand] = useState(session.startupCommand || "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const commandInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -30,6 +35,17 @@ export function SessionItem({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    if (showCommandDialog && commandInputRef.current) {
+      commandInputRef.current.focus();
+      commandInputRef.current.select();
+    }
+  }, [showCommandDialog]);
+
+  useEffect(() => {
+    setEditCommand(session.startupCommand || "");
+  }, [session.startupCommand]);
 
   const handleSubmit = () => {
     if (editName.trim() && editName !== session.name) {
@@ -51,7 +67,23 @@ export function SessionItem({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Could implement context menu here
+    setShowCommandDialog(true);
+  };
+
+  const handleCommandSubmit = () => {
+    if (onSetStartupCommand) {
+      onSetStartupCommand(editCommand.trim() || null);
+    }
+    setShowCommandDialog(false);
+  };
+
+  const handleCommandKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleCommandSubmit();
+    } else if (e.key === "Escape") {
+      setEditCommand(session.startupCommand || "");
+      setShowCommandDialog(false);
+    }
   };
 
   const statusColor = {
@@ -88,7 +120,7 @@ export function SessionItem({
         <line x1="12" y1="19" x2="20" y2="19" />
       </svg>
 
-      {/* Name */}
+      {/* Name and startup command indicator */}
       {isEditing ? (
         <input
           ref={inputRef}
@@ -101,9 +133,40 @@ export function SessionItem({
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="flex-1 text-sm text-[var(--color-text)] truncate">
-          {session.name}
-        </span>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-[var(--color-text)] truncate block">
+            {session.name}
+          </span>
+          {session.startupCommand && (
+            <span className="text-[10px] text-[var(--color-text-muted)] truncate block opacity-70">
+              → {session.startupCommand}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Set startup command button */}
+      {onSetStartupCommand && (
+        <button
+          className={`opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--color-surface-hover)] rounded transition-opacity ${
+            session.startupCommand ? "text-[var(--color-accent)]" : ""
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowCommandDialog(true);
+          }}
+          title={session.startupCommand ? `Startup: ${session.startupCommand}` : "Set startup command"}
+        >
+          <svg
+            className="w-3.5 h-3.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
       )}
 
       {/* Add to split button */}
@@ -156,6 +219,65 @@ export function SessionItem({
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
+
+      {/* Startup command dialog */}
+      {showCommandDialog && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowCommandDialog(false)}
+        >
+          <div
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 w-96 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-[var(--color-text)] mb-2">
+              Startup Command for "{session.name}"
+            </h3>
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">
+              This command will auto-run when the session is restored (e.g., ssh user@host)
+            </p>
+            <input
+              ref={commandInputRef}
+              type="text"
+              value={editCommand}
+              onChange={(e) => setEditCommand(e.target.value)}
+              onKeyDown={handleCommandKeyDown}
+              placeholder="ssh user@server or npm run dev"
+              className="w-full bg-[var(--color-surface-hover)] text-[var(--color-text)] text-sm px-3 py-2 rounded border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)] font-mono"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              {session.startupCommand && (
+                <button
+                  className="px-3 py-1.5 text-xs text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] rounded"
+                  onClick={() => {
+                    if (onSetStartupCommand) {
+                      onSetStartupCommand(null);
+                    }
+                    setShowCommandDialog(false);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                className="px-3 py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] rounded"
+                onClick={() => {
+                  setEditCommand(session.startupCommand || "");
+                  setShowCommandDialog(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs bg-[var(--color-accent)] text-white rounded hover:opacity-90"
+                onClick={handleCommandSubmit}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
